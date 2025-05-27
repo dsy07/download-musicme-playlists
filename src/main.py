@@ -20,17 +20,12 @@ from download_playlist import download_musics_from_youtube
 path_project = os.path.dirname(os.path.dirname(__file__))
 path_data = os.path.join(path_project, "data")
 path_musicme_playlists = os.path.join(path_data, "musicme_playlists")
-path_playlist_json_data_dir = os.path.join(path_musicme_playlists, "data")
 path_download_playlist_dir = os.path.join(path_data, "downloaded")
 path_playlists_url_file = os.path.join(path_musicme_playlists, "playlists.txt")
 
 # check dir paths
-for dir_path in [
-    path_playlist_json_data_dir,
-    path_download_playlist_dir
-]:
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+if not os.path.exists(path_download_playlist_dir):
+    os.makedirs(path_download_playlist_dir)
 
 
 # save playlist in a .json
@@ -38,7 +33,7 @@ def save_playlist_json(playlist:dict):
     """Save playlist metadata is a json file"""
 
     # save playlist data
-    with open(os.path.join(path_playlist_json_data_dir, playlist["name"]+".json"), "w") as w_file:
+    with open(os.path.join(path_musicme_playlists, playlist["name"]+".json"), "w") as w_file:
         json.dump(playlist, w_file, indent=2)
 
 

@@ -19,22 +19,17 @@ from download_playlist import actualize_playlist, download_musics_from_youtube
 # consts
 path_project = os.path.dirname(os.path.dirname(__file__))
 path_playlists_url_file = os.path.join(path_project, "data", "musicme_playlists", "playlists.txt")
-path_playlist_json_data_dir = os.path.join(path_project, "data", "musicme_playlists", "data")
 path_download_playlist_dir = os.path.join(path_project, "data", "downloaded")
 
 # check dir paths
-for dir_path in [
-    path_playlist_json_data_dir,
-    path_download_playlist_dir
-]:
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+if not os.path.exists(path_download_playlist_dir):
+    os.makedirs(path_download_playlist_dir)
 
 
 # get a data playlist path
 def get_playlist_data_path(playlist:dict):
     """Get a path of the playlist data"""
-    return os.path.join(path_playlist_json_data_dir, playlist["name"]+".json")
+    return os.path.join(path_download_playlist_dir, playlist["name"]+".json")
 
 # check playlist changes
 def check_playlist_changes(playlist:dict):
