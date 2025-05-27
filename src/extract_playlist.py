@@ -34,6 +34,8 @@ def _init_webdriver():
 def _html_extract_in_logged(soup:BeautifulSoup, playlist_name=None):
     """Extract the playlist from a html like a musicme (logged page)"""
 
+    #NOTE: this function is used when the user is logged on musicme website and use a htmlfile
+
     # find a div with the playlist title
     if playlist_name is None: # if playlist name not gived
         playlist_name = soup.body.find('div', attrs={'class':'plmenutxt'}).text
@@ -158,6 +160,9 @@ def _extract_playlist_from_html(html_playlist:str, playlist_name:str=None):
 
 def extract_playlist_from_htmlfile(html_playlist_path:str):
     """Extract the titles, authors in a playlist of musics from musicme website"""
+
+    # deprecated function
+    raise DeprecationWarning("This function is deprecated, use 'extract_playlist_from_html' instead.")
 
     # get name by name
     playlist_basename = os.path.basename(html_playlist_path)

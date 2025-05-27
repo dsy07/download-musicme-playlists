@@ -12,20 +12,23 @@
 # imports
 import os
 import json
-from extract_playlist import extract_playlist_from_htmlfile, extract_playlist_from_url
+from extract_playlist import extract_playlist_from_url
 from download_playlist import actualize_playlist, download_musics_from_youtube
 
 
 # consts
 path_project = os.path.dirname(os.path.dirname(__file__))
 path_playlists_url_file = os.path.join(path_project, "data", "musicme_playlists", "playlists.txt")
-path_playlist_html_dir = os.path.join(path_project, "data", "musicme_playlists", "html")
 path_playlist_json_data_dir = os.path.join(path_project, "data", "musicme_playlists", "data")
 path_download_playlist_dir = os.path.join(path_project, "data", "downloaded")
 
-
-# force html files download
-force_from_htmlfiles = False
+# check dir paths
+for dir_path in [
+    path_playlist_json_data_dir,
+    path_download_playlist_dir
+]:
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
 
 # get a data playlist path
@@ -88,34 +91,25 @@ def save_playlist_json(playlist:dict):
 
 
 # check if playlists.txt exists
-if not os.path.exists(path_playlists_url_file) or force_from_htmlfiles:
-    # use playlists html file
-    print("Use extracts from web urls in '.html' files for download playlists\nSearch '.html' playlist files ...")
-    playlists_html = []
-    for file in os.listdir(path_playlist_html_dir):
-        if file.endswith(".html"):
-            playlists_html.append(os.path.join(path_playlist_html_dir, file))
-    playlists_html_or_urls, use_playlists_txt = playlists_html, False
-
-else:
+if os.path.exists(path_playlists_url_file):
     # use playlists urls
     print("Use 'playlist.txt' file of urls for download playlists\nLoad 'playlist.txt' ...")
     with open(path_playlists_url_file, "r") as r_file:
-        playlists_url = r_file.readlines()
-    playlists_html_or_urls, use_playlists_txt = playlists_url, True
+        playlist_urls = r_file.readlines()
+
+else:
+    # file not found
+    print("Error : 'playlists.txt' file not found !\nPlease create this file with the urls of the playlists to download.")
 
 
 # get playlists from html extracts
 print("Extracting playlists ...")
 playlists = []
 
-for playlist_to_download in playlists_html_or_urls:
+for playlist_url in playlist_urls:
 
     # extract the playlist from the html file
-    if use_playlists_txt:
-        playlist, playlist_name = extract_playlist_from_url(playlist_to_download)
-    else:
-        playlist, playlist_name = extract_playlist_from_htmlfile(playlist_to_download)
+    playlist, playlist_name = extract_playlist_from_url(playlist_url)
     print(f"- playlist '{playlist_name}' extracted")
 
     # create new_playlist
