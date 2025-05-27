@@ -1,0 +1,3 @@
+pytubefix
+beautifulsoup4
+selenium
