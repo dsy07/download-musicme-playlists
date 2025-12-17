@@ -5,10 +5,16 @@
 # Date: 21/05/2025
 #---------------------------------------------------------------------------------
 
+
 # imports
-import os
+import time
+import logging
 from bs4 import BeautifulSoup
 from selenium import webdriver
+
+
+# configure logger
+log = logging.getLogger("__main__")
 
 
 # init webrother driver
@@ -24,21 +30,21 @@ def _init_webdriver():
         return
 
     # init the webdriver
-    print("Init webdriver ...")
+    log.info("init webdriver")
     opts = webdriver.ChromeOptions()
     opts.add_argument("--headless")
+    opts.add_argument("--log-level=1")
     _webdriver = webdriver.Chrome(options=opts)
 
 
 # extract playlist from html
-def _html_extract_in_logged(soup:BeautifulSoup, playlist_name=None):
+def _html_extract_in_logged(soup:BeautifulSoup):
     """Extract the playlist from a html like a musicme (logged page)"""
 
     #NOTE: this function is used when the user is logged on musicme website and use a htmlfile
 
     # find a div with the playlist title
-    if playlist_name is None: # if playlist name not gived
-        playlist_name = soup.body.find('div', attrs={'class':'plmenutxt'}).text
+    playlist_name = soup.body.find('div', attrs={'class':'plmenutxt'}).text
 
     # find the playlist data div
     playlist_div = soup.body.find('div', attrs={'id':'playlist'})
@@ -80,12 +86,11 @@ def _html_extract_in_logged(soup:BeautifulSoup, playlist_name=None):
     return playlist, playlist_name
 
 
-def _html_extract_in_not_logged(soup:BeautifulSoup, playlist_name=None):
+def _html_extract_in_not_logged(soup:BeautifulSoup):
     """Extract the playlist from a html like a musicme (not logged page)"""
     
     # find a div with the playlist title
-    if playlist_name is None: # if playlist name not gived
-        playlist_name = soup.body.find('h1', attrs={'class':'album-name'}).text
+    playlist_name = soup.body.find('h1', attrs={'class':'album-name'}).text
 
     # find the playlist data div
     playlist_div = soup.body.find('div', attrs={'class':'tracks-container'})
@@ -136,10 +141,11 @@ def _html_extract_in_not_logged(soup:BeautifulSoup, playlist_name=None):
 
 
 # extract playlist
-def _extract_playlist_from_html(html_playlist:str, playlist_name:str=None):
+def _extract_playlist_from_html(html_playlist:str):
     """Extract the titles, authors in a playlist of musics from musicme website"""  
 
     # load html playlist with beautiful soup
+    log.info(f"extracting playlist from html")
     soup = BeautifulSoup(html_playlist, 'html.parser')
 
     #NOTE: if the user are logged on musicme website, a different page (of the playlist) is displayed
@@ -149,34 +155,10 @@ def _extract_playlist_from_html(html_playlist:str, playlist_name:str=None):
     html_musicme_is_logged = True if not_logd_div is None else False
 
     # extract playlist
-    if html_musicme_is_logged:
-        playlist, playlist_name = _html_extract_in_logged(soup, playlist_name)
-    else:
-        playlist, playlist_name = _html_extract_in_not_logged(soup, playlist_name)
+    playlist, playlist_name = _html_extract_in_logged(soup) if html_musicme_is_logged else _html_extract_in_not_logged(soup)
 
     # return playlist
     return playlist, playlist_name
-
-
-def extract_playlist_from_htmlfile(html_playlist_path:str):
-    """Extract the titles, authors in a playlist of musics from musicme website"""
-
-    # deprecated function
-    raise DeprecationWarning("This function is deprecated, use 'extract_playlist_from_html' instead.")
-
-    # get name by name
-    playlist_basename = os.path.basename(html_playlist_path)
-    playlist_name = os.path.splitext(playlist_basename)[0]
-
-    # format the html for bs4
-    with open(html_playlist_path, "r", encoding="utf-8") as r_file:
-        html_playlist = r_file.read()
-
-    # format the html_playlist (with 'body' like a html)
-    html_playlist = f"""<!doctype html><html><body><div id="playlist">{html_playlist}</div></body></html>"""
-
-    # extract playlist from html and retur this
-    return _extract_playlist_from_html(html_playlist, playlist_name)
 
 
 def extract_playlist_from_url(url_playlist:str):
@@ -188,6 +170,7 @@ def extract_playlist_from_url(url_playlist:str):
     try:
         # load url
         _webdriver.get(url_playlist)
+        time.sleep(2) # sleep a little
         
         # switch src html to iframe 'frmmain' which contain playlist data
         _webdriver.switch_to.frame(_webdriver.find_element("id", "frmmain"))
@@ -197,4 +180,5 @@ def extract_playlist_from_url(url_playlist:str):
         raise type(err) (str(err).split("\n")[:1][0]) # raise the same Exception but with some lines removed
 
     # extract playlist from html and return this
+    log.info(f"extracting html from musicme ({url_playlist})")
     return _extract_playlist_from_html(_webdriver.page_source)

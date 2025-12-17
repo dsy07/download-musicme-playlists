@@ -10,22 +10,37 @@
 
 
 # imports
-import os
+import os, sys
 import json
-from extract_playlist import extract_playlist_from_url
-from download_playlist import download_musics_from_youtube
+import logging
+from extract_playlist import *
+from download_playlist import *
 
 
 # consts
 path_project = os.path.dirname(os.path.dirname(__file__))
 path_data = os.path.join(path_project, "data")
 path_musicme_playlists = os.path.join(path_data, "musicme_playlists")
-path_download_playlist_dir = os.path.join(path_data, "downloaded")
+if sys.platform == "win32":
+    path_download_playlist_dir = os.path.join("C:", "Users", os.getlogin(), "Music")
+else:
+    path_download_playlist_dir = os.path.join(path_data, "downloaded")
 path_playlists_url_file = os.path.join(path_musicme_playlists, "playlists.txt")
 
-# check dir paths
+
+# configure logger
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+fh = logging.FileHandler(os.path.join(path_data, 'download_musicme.log'), encoding="utf-8")
+fh.setLevel(logging.DEBUG)
+log.addHandler(fh)
+log.info("-- download-musicme-playlist started --")
+
+
+# check paths
 if not os.path.exists(path_download_playlist_dir):
     os.makedirs(path_download_playlist_dir)
+print(f"Playlists are downloaded in \"{path_download_playlist_dir}\"")
 
 
 # save playlist in a .json
@@ -42,7 +57,7 @@ if os.path.exists(path_playlists_url_file):
     # use playlists urls
     print("Use 'playlist.txt' file of urls for download playlists\nLoad 'playlist.txt' ...")
     with open(path_playlists_url_file, "r") as r_file:
-        playlist_urls = r_file.readlines()
+        playlist_urls = r_file.read().split()
 
 else:
     # file not found
@@ -57,7 +72,11 @@ for playlist_url in playlist_urls:
 
     # extract the playlist from the html file
     playlist, playlist_name = extract_playlist_from_url(playlist_url)
-    print(f"- playlist '{playlist_name}' extracted")
+
+    # check chrs in playlist_name
+    for not_ok_chr in "\\/:*?\"<>|":
+        if not_ok_chr in playlist_name:
+            playlist_name = playlist_name.replace(not_ok_chr, "-")
 
     # create new_playlist
     new_playlist = {
@@ -67,6 +86,7 @@ for playlist_url in playlist_urls:
         "downloaded": False,
         "data": playlist
     }
+    print(f"- playlist '{playlist_name}' extracted")
 
     # append and save the new playlist
     playlists.append(new_playlist)
@@ -91,7 +111,7 @@ for playlist in playlists:
     if result:
         print(f"=> Playlist '{pl_name}' downloaded")
     else:
-        print(f"=> Playlist '{pl_name}' not downloaded ! "+err_txt)
+        print(f"\n=> Playlist '{pl_name}' not downloaded ! "+err_txt)
 
     # save the new data actualized for the playlist
     save_playlist_json(playlist)
